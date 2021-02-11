@@ -1,10 +1,31 @@
 'use strict';
 
 const EmberApp = require('ember-cli/lib/broccoli/ember-app');
+const nodeSass = require('node-sass');
 
 module.exports = function (defaults) {
   let app = new EmberApp(defaults, {
-    // Add options here
+    sassOptions: {
+      implementation: nodeSass,
+    },
+    postcssOptions: {
+      compile: {
+        enabled: false,
+      },
+      filter: {
+        enabled: true,
+        exclude: ['**/*.css.map'],
+        plugins: [
+          require('tailwindcss'),
+          {
+            module: require('autoprefixer'),
+            options: {
+              browsers: ['last 2 versions'],
+            },
+          },
+        ],
+      },
+    },
   });
 
   // Use `app.import` to add additional libraries to the generated
@@ -20,5 +41,18 @@ module.exports = function (defaults) {
   // please specify an object with the list of modules as keys
   // along with the exports of each module as its value.
 
-  return app.toTree();
+  if (process.env.EMBROIDER) {
+    const { Webpack } = require('@embroider/webpack');
+    return require('@embroider/compat').compatBuild(app, Webpack, {
+      // staticAddonTestSupportTrees: true,
+      // staticAddonTrees: true,
+      // staticHelpers: true,
+      // staticComponents: true,
+      // packagerOptions: {
+      //    webpackConfig: { }
+      // }
+    });
+  } else {
+    return app.toTree();
+  }
 };
